@@ -1,5 +1,4 @@
-const BASE_URL = "https://api.coingecko.com/api/v3";
-
+const BASE_URL = "/coingecko";
 // ✅ API 1: Get coins list
 export const getCoins = async () => {
   const res = await fetch(
@@ -16,10 +15,29 @@ export const getGlobalData = async () => {
   return data;
 };
 
-export const getCoinChart = async (coin,days) => {
-  const res = await fetch(
-    `${BASE_URL}/coins/${coin}/market_chart?vs_currency=usd&days=${days}`
-  );
-  const data = await res.json();
-  return data.prices;
+
+export const getCoinChart = async (coin, days, signal) => {
+  try {
+    const res = await fetch(
+      `/coingecko/coins/${coin}/market_chart?vs_currency=usd&days=${days}`,
+      { signal }
+    );
+
+    // 🔴 Handle rate limit
+    if (res.status === 429) {
+      throw new Error("RATE_LIMIT");
+    }
+
+    // 🔴 Handle other errors
+    if (!res.ok) {
+      throw new Error("API_ERROR");
+    }
+
+    const data = await res.json();
+
+    return data.prices; // [[time, price], ...]
+  } catch (err) {
+    // important: rethrow so hook can handle
+    throw err;
+  }
 };
